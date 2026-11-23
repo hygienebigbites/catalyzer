@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#B4262C">
+<title>GapIntel · Cart Snap</title>
+<style>
+  :root{
+    --bg:#F6F4F1; --card:#FFFFFF; --ink:#1D1B19; --muted:#6B655E; --line:#E6E1DA;
+    --brand:#B4262C; --brand-ink:#FFFFFF; --ok:#1E7A46; --ok-bg:#E7F4EC;
+    --warn:#9A5B00; --warn-bg:#FFF3DC; --bad:#B4262C; --bad-bg:#FCE9E8;
+    --swiggy:#FC8019; --zomato:#CB202D; --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",sans-serif}
+  header{position:sticky;top:0;z-index:5;background:var(--brand);color:var(--brand-ink);
+    padding:12px 16px calc(12px);display:flex;align-items:center;gap:10px}
+  header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.2px}
+  header .sub{font-size:12px;opacity:.85}
+  header .grow{flex:1}
+  .iconbtn{background:rgba(255,255,255,.16);border:0;color:#fff;border-radius:10px;
+    width:38px;height:38px;font-size:18px;cursor:pointer}
+  main{max-width:560px;margin:0 auto;padding:12px 12px 120px}
+  .banner{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:10px 12px;
+    font-size:13px;margin-bottom:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:14px;margin-bottom:12px}
+  .card h2{font-size:14px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+  .step{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;
+    background:var(--brand);color:#fff;font-size:12px;margin-right:6px;vertical-align:1px}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .seg button{padding:12px;border-radius:12px;border:2px solid var(--line);background:#fff;
+    font-weight:700;font-size:15px;cursor:pointer}
+  .seg button.on[data-agg="Swiggy"]{border-color:var(--swiggy);color:var(--swiggy);background:#FFF4EB}
+  .seg button.on[data-agg="Zomato"]{border-color:var(--zomato);color:var(--zomato);background:#FDECEE}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .chip{padding:9px 12px;border-radius:999px;border:1.5px solid var(--line);background:#fff;
+    font-size:14px;cursor:pointer;position:relative}
+  .chip.on{border-color:var(--ink);background:var(--ink);color:#fff}
+  .chip.done::after{content:"✓";font-size:11px;margin-left:5px;color:var(--ok)}
+  .chip.on.done::after{color:#9FE0B9}
+  .label{font-size:12px;color:var(--muted);margin:0 0 6px}
+  .slotline{font-size:13px;color:var(--muted)}
+  .slotline b{color:var(--ink)}
+  .upload{display:block;border:2px dashed var(--line);border-radius:12px;padding:18px;text-align:center;
+    cursor:pointer;color:var(--muted)}
+  .upload b{display:block;color:var(--ink);font-size:16px;margin-bottom:2px}
+  .upload input{display:none}
+  .thumbs{display:flex;gap:8px;overflow-x:auto;margin-top:10px}
+  .thumb{position:relative;flex:0 0 auto}
+  .thumb img{height:120px;border-radius:8px;border:1px solid var(--line);display:block}
+  .thumb button{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;
+    border:0;background:rgba(0,0,0,.65);color:#fff;cursor:pointer}
+  .btn{display:block;width:100%;padding:14px;border-radius:12px;border:0;font-weight:700;font-size:16px;
+    cursor:pointer;background:var(--brand);color:#fff}
+  .btn.secondary{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .link{background:none;border:0;color:var(--brand);font-weight:600;cursor:pointer;padding:8px 0;font-size:14px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .field input,.field textarea,.modal input,.modal select{width:100%;padding:11px 10px;border:1.5px solid var(--line);
+    border-radius:10px;font-size:16px;background:#fff;color:var(--ink);font-family:inherit}
+  .field textarea{min-height:70px;resize:vertical;font-size:14px}
+  .field.unsure input{border-color:#E0A100;background:var(--warn-bg)}
+  .field.unsure label::after{content:" · check";color:var(--warn);font-weight:600}
+  .field{margin-bottom:10px}
+  .checks{border-radius:10px;padding:10px 12px;font-size:13px;margin:4px 0 12px}
+  .checks div{padding:3px 0}
+  .ck-ok{color:var(--ok)} .ck-warn{color:var(--warn)} .ck-bad{color:var(--bad);font-weight:600}
+  .checks.all-ok{background:var(--ok-bg)} .checks.has-warn{background:var(--warn-bg)} .checks.has-bad{background:var(--bad-bg)}
+  .meta{font-size:13px;color:var(--muted);margin-bottom:10px}
+  table.grid{width:100%;border-collapse:collapse;font-size:13px}
+  table.grid th,table.grid td{padding:6px 4px;text-align:center;border-bottom:1px solid var(--line)}
+  table.grid th:first-child,table.grid td:first-child{text-align:left}
+  .dot{display:inline-block;width:22px;height:22px;border-radius:6px;border:1.5px solid var(--line);
+    cursor:pointer;font-size:11px;line-height:19px;color:var(--muted)}
+  .dot.done{background:var(--ok);border-color:var(--ok);color:#fff}
+  .dot.cur{outline:2px solid var(--ink);outline-offset:1px}
+  .aggh.s{color:var(--swiggy)} .aggh.z{color:var(--zomato)}
+  .count{font-weight:700;color:var(--ink)}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);background:var(--ink);color:#fff;
+    padding:12px 18px;border-radius:12px;font-size:14px;transition:transform .25s;z-index:20;max-width:92vw}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast.err{background:var(--bad)}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;
+    border-radius:50%;animation:spin .8s linear infinite;vertical-align:-3px;margin-right:8px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:30}
+  .modal-bg.show{display:flex}
+  .modal{background:#fff;width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:18px 16px 24px;max-height:90vh;overflow:auto}
+  .modal h3{margin:0 0 12px}
+  .modal .field{margin-bottom:12px}
+  .hidden{display:none!important}
+  .small{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div class="grow">
+    <h1>GapIntel · Cart Snap</h1>
+    <div class="sub" id="hdrSub">—</div>
+  </div>
+  <button class="iconbtn" id="btnSettings" aria-label="Settings">⚙</button>
+</header>
+
+<main>
+  <div class="banner hidden" id="demoBanner">Demo mode — no sheet connected. Readings are sample numbers and nothing is saved. Open ⚙ Settings to connect.</div>
+
+  <!-- STEP 1: slot -->
+  <section class="card">
+    <h2><span class="step">1</span>Which cart?</h2>
+    <div class="seg" id="aggSeg">
+      <button data-agg="Swiggy">Swiggy</button>
+      <button data-agg="Zomato">Zomato</button>
+    </div>
+    <p class="label">Restaurant</p>
+    <div class="chips" id="restChips"></div>
+    <p class="label">Quantity in cart</p>
+    <div class="chips" id="qtyChips"></div>
+    <div class="slotline" id="slotLine"></div>
+  </section>
+
+  <!-- STEP 2: screenshots -->
+  <section class="card">
+    <h2><span class="step">2</span>Bill screenshots</h2>
+    <label class="upload" id="dropZone">
+      <b>＋ Add screenshots</b>
+      Bill card + the GST &amp; charges breakup (up to 4)
+      <input type="file" id="fileIn" accept="image/*" multiple>
+    </label>
+    <div class="thumbs" id="thumbs"></div>
+    <div style="height:12px"></div>
+    <button class="btn" id="btnRead" disabled>Read bill with AI</button>
+    <button class="link" id="btnManual">Enter numbers manually instead</button>
+  </section>
+
+  <!-- STEP 3: check & save -->
+  <section class="card hidden" id="formCard">
+    <h2><span class="step">3</span>Check &amp; save</h2>
+    <div class="meta" id="readMeta"></div>
+    <div class="checks" id="checks"></div>
+    <div id="fields"></div>
+    <div class="row2">
+      <div class="field"><label for="f_item_name">Item name</label><input id="f_item_name"></div>
+      <div class="field"><label for="f_unit_price">Unit price (₹)</label><input id="f_unit_price" inputmode="decimal"></div>
+    </div>
+    <div class="field"><label for="f_coupon_code">Coupon code</label><input id="f_coupon_code"></div>
+    <div class="field"><label for="f_coupon_desc">Coupon description</label><input id="f_coupon_desc"></div>
+    <div class="field"><label for="f_remarks">Remarks</label><textarea id="f_remarks"></textarea></div>
+    <button class="btn" id="btnSave">Save to sheet</button>
+    <button class="link" id="btnDiscard">Discard this reading</button>
+  </section>
+
+  <!-- PROGRESS -->
+  <section class="card">
+    <h2 style="display:flex;justify-content:space-between;align-items:center">
+      <span>Today's progress · <span class="count" id="progCount">0/0</span></span>
+      <button class="link" id="btnRefresh" style="padding:0">Refresh</button>
+    </h2>
+    <table class="grid" id="progGrid"></table>
+    <p class="small">Tap a box to jump to that cart. Green = saved today (by anyone on the team).</p>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-bg" id="settingsBg">
+  <div class="modal">
+    <h3>Settings</h3>
+    <div class="field"><label for="s_name">Your name (goes in "Updated by")</label><input id="s_name" placeholder="e.g. Mona"></div>
+    <div class="field"><label for="s_pin">Team PIN</label><input id="s_pin" inputmode="numeric" placeholder="Ask Ansar"></div>
+    <div class="field"><label for="s_url">Backend URL (Apps Script web app)</label><input id="s_url" placeholder="https://script.google.com/macros/s/…/exec"></div>
+    <div class="field"><label for="s_maxq">Highest quantity to audit</label>
+      <select id="s_maxq"><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
+      <div class="small">4 is the standard round. Use 6–8 to reach the ₹900+ band.</div>
+    </div>
+    <button class="btn secondary" id="btnTest">Test connection</button>
+    <div class="small" id="testOut" style="margin:8px 0 12px"></div>
+    <button class="btn" id="btnSaveSettings">Save</button>
+  </div>
+</div>
+
+<script>
+/* ================= CONFIG ================= */
+// Paste the Apps Script web-app URL here before uploading to Netlify, so the team doesn't have to.
+const BACKEND_URL = '';
+const RESTAURANTS = ['Andhra Gunpowder', 'Nandhini Deluxe', 'Nagarjuna', 'Nandhana Palace'];
+const AGGS = ['Swiggy', 'Zomato'];
+const NUM_FIELDS = [
+  ['total_bill',   'Total Bill (To Pay)', true],
+  ['item_total',   'Item Total', true],
+  ['aov',          'AOV (item total before offers)', true],
+  ['gst_charges',  'GST & Restaurant Charges'],
+  ['gst_on_item',  'GST on Item Total'],
+  ['packing',      'Packing charges'],
+  ['delivery_fee', 'Delivery fee (charged)'],
+  ['distance',     'Distance (km)'],
+  ['platform_fee', 'Platform fee'],
+  ['discount_1',   'Discount-1'],
+  ['discount_2',   'Discount-2'],
+];
+// AI key → form field, for highlighting "uncertain" reads
+const AI_TO_FIELD = {
+  total_bill:'total_bill', item_total:'item_total', item_total_before_offers:'aov',
+  gst_and_restaurant_charges:'gst_charges', gst_on_item_total:'gst_on_item', packing_charges:'packing',
+  delivery_fee_charged:'delivery_fee', distance_km:'distance', platform_fee:'platform_fee',
+  discount_1:'discount_1', discount_2:'discount_2', coupon_code:'coupon_code', coupon_description:'coupon_desc',
+};
+
+/* ================= STATE ================= */
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem('cs_'+k); return v===null ? d : JSON.parse(v); }catch(_){ return d; } },
+  set(k, v){ try{ localStorage.setItem('cs_'+k, JSON.stringify(v)); }catch(_){} },
+};
+const S = {
+  agg: 'Swiggy', rest: RESTAURANTS[0], qty: 1,
+  images: [],          // [{mime, data(base64), url}]
+  ai: null,            // last AI reading
+  remarksTouched: false,
+  done: [],            // [{aggregator, restaurant, qty}]
+  busy: false,
+};
+const cfg = () => ({
+  url: (store.get('url','') || BACKEND_URL).trim(),
+  pin: store.get('pin',''), name: store.get('name',''), maxq: Number(store.get('maxq',4)),
+});
+const isDemo = () => !cfg().url;
+const today = () => { const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const $ = id => document.getElementById(id);
+
+/* ================= API ================= */
+async function api(action, payload){
+  if (isDemo()) return demoApi(action, payload);
+  const res = await fetch(cfg().url, { method:'POST', body: JSON.stringify(Object.assign({action, pin: cfg().pin}, payload||{})) });
+  if (!res.ok) throw new Error('Network error '+res.status);
+  const j = await res.json();
+  if (!j.ok) throw new Error(j.error || 'Something went wrong');
+  return j;
+}
+const demoSaved = [];
+async function demoApi(action, p){
+  await new Promise(r=>setTimeout(r, 700));
+  if (action==='ping') return {ok:true, provider:'demo'};
+  if (action==='progress') return {ok:true, rows: demoSaved.slice()};
+  if (action==='save'){ demoSaved.push({aggregator:p.row.aggregator, restaurant:p.row.restaurant, qty:p.row.qty}); return {ok:true, templateRow:'demo'}; }
+  if (action==='extract'){
+    const q = S.qty, unit = 109, it = unit*q, pack = 15*q, gst = +(0.05*(it+pack)).toFixed(2), plat = 17.98;
+    const charges = +(pack+gst+plat).toFixed(2), d2 = 15, total = Math.round(it+charges-d2);
+    return {ok:true, data:{ aggregator:S.agg, restaurant_name:S.rest, items:[{name:'Ghee Podi Idli', qty:q, unit_price:unit, line_total:it}],
+      item_total:it, item_total_before_offers:it, gst_and_restaurant_charges:charges, gst_on_item_total:gst, packing_charges:pack,
+      delivery_fee_charged:0, delivery_fee_original:48, distance_km:4.4, platform_fee:plat, discount_1:null, discount_1_label:null,
+      discount_2:d2, discount_2_label:'Extra discount for you', coupon_code:null, coupon_description:null, total_bill:total,
+      membership:null, bill_lines:[{label:'Item Total',amount:it,sign:1},{label:'GST & Other Charges',amount:charges,sign:1},{label:'Extra discount',amount:d2,sign:-1}],
+      uncertain:['distance_km'], notes:null }};
+  }
+}
+
+/* ================= IMAGES ================= */
+function compress(file){
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 2000, s = Math.min(1, MAX / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width*s); c.height = Math.round(img.height*s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      const dataUrl = c.toDataURL('image/jpeg', 0.85);
+      URL.revokeObjectURL(url);
+      resolve({ mime:'image/jpeg', data: dataUrl.split(',')[1], url: dataUrl });
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not open '+file.name)); };
+    img.src = url;
+  });
+}
+
+/* ================= VALIDATION (pure) ================= */
+function num(v){ if (v===''||v===null||v===undefined) return null; const n = Number(String(v).replace(/[₹,\s]/g,'')); return isFinite(n) ? n : NaN; }
+function runChecks(f, ctx){
+  // f: numbers (or null) for NUM_FIELDS + unit_price ; ctx: {qty, agg, rest, ai}
+  const out = []; const add = (lvl, msg) => out.push({lvl, msg});
+  const z = v => (v===null||isNaN(v)) ? 0 : v;
+
+  if (f.total_bill===null) add('bad','Total Bill is missing.');
+  if (f.item_total===null) add('bad','Item Total is missing.');
+  NUM_FIELDS.forEach(([k,label]) => { if (isNaN(f[k])) add('bad', label+' is not a number.'); else if (f[k]!==null && f[k]<0) add('bad', label+' is negative — enter discounts as positive numbers.'); });
+
+  // Bill adds up?
+  if (f.total_bill!==null && f.item_total!==null && !isNaN(f.total_bill)){
+    const inside = z(f.gst_on_item) + z(f.packing) + z(f.platform_fee);
+    let charges;
+    if (f.gst_charges===null) charges = inside;
+    else if (f.gst_charges >= inside - 0.5) charges = f.gst_charges;                                  // line includes packing + platform
+    else if (f.gst_charges >= z(f.gst_on_item) + z(f.packing) - 0.5) charges = f.gst_charges + z(f.platform_fee); // platform shown separately
+    else charges = f.gst_charges + z(f.packing) + z(f.platform_fee);                                 // line is GST only
+    const base = f.item_total + charges + z(f.delivery_fee);
+    const est = base - z(f.discount_1) - z(f.discount_2);
+    const est2 = base - z(f.discount_2); // Discount-1 already inside Item Total
+    if (Math.abs(est - f.total_bill) <= 1) add('ok', 'Bill adds up: ₹'+est.toFixed(2)+' ≈ ₹'+f.total_bill+'.');
+    else if (z(f.discount_1)>0 && Math.abs(est2 - f.total_bill) <= 1) add('warn', 'Bill adds up only if Discount-1 is already inside Item Total — check which line it applies to.');
+    else add('bad', 'Bill does not add up: parts make ₹'+est.toFixed(2)+' but Total Bill is ₹'+f.total_bill+'. Re-check charges and discounts.');
+  }
+
+  // Item total vs unit × qty
+  if (f.unit_price!==null && !isNaN(f.unit_price) && ctx.qty){
+    const exp = f.unit_price*ctx.qty, ref = f.aov!==null ? f.aov : f.item_total;
+    if (ref!==null && !isNaN(ref)){
+      if (Math.abs(exp-ref) <= 1) add('ok','Item total matches ₹'+f.unit_price+' × '+ctx.qty+'.');
+      else add('warn','₹'+f.unit_price+' × '+ctx.qty+' = ₹'+exp.toFixed(2)+', but AOV/Item Total is ₹'+ref+'. Is the quantity right?');
+    }
+  }
+  if (f.distance!==null && !isNaN(f.distance) && (f.distance>30)) add('warn','Distance over 30 km — check the unit.');
+
+  // AI vs chosen slot
+  const ai = ctx.ai;
+  if (ai){
+    if (ai.aggregator && ai.aggregator.toLowerCase()!==ctx.agg.toLowerCase()) add('bad','Screenshot looks like '+ai.aggregator+', but '+ctx.agg+' is selected.');
+    const aq = (ai.items||[]).reduce((s,i)=>s+(Number(i.qty)||0),0);
+    if (aq && aq!==ctx.qty) add('bad','Screenshot shows quantity '+aq+', but '+ctx.qty+' is selected.');
+    if (ai.restaurant_name){
+      const key = ctx.rest.toLowerCase().split(' ')[0];
+      if (ai.restaurant_name.toLowerCase().indexOf(key)===-1) add('warn','Restaurant in screenshot: "'+ai.restaurant_name+'". Selected: '+ctx.rest+'.');
+    }
+    if ((ai.items||[]).length>1) add('warn','More than one item in the cart — the audit needs a single item.');
+    if (ai.notes) add('warn','AI note: '+ai.notes);
+  }
+  return out;
+}
+
+/* ================= RENDER ================= */
+function isDone(agg, rest, qty){ return S.done.some(d => d.aggregator===agg && d.restaurant===rest && Number(d.qty)===qty); }
+
+function renderSlot(){
+  document.querySelectorAll('#aggSeg button').forEach(b => b.classList.toggle('on', b.dataset.agg===S.agg));
+  $('restChips').innerHTML = RESTAURANTS.map(r => {
+    const all = Array.from({length:cfg().maxq},(_,i)=>i+1).every(q=>isDone(S.agg,r,q));
+    return '<button class="chip'+(r===S.rest?' on':'')+(all?' done':'')+'" data-rest="'+r+'">'+r+'</button>';
+  }).join('');
+  $('qtyChips').innerHTML = Array.from({length:cfg().maxq},(_,i)=>i+1).map(q =>
+    '<button class="chip'+(q===S.qty?' on':'')+(isDone(S.agg,S.rest,q)?' done':'')+'" data-q="'+q+'">'+q+'</button>').join('');
+  $('slotLine').innerHTML = 'Auditing <b>'+S.agg+' · '+S.rest+' · Qty '+S.qty+'</b>' + (isDone(S.agg,S.rest,S.qty) ? ' — <span class="ck-warn">already saved today</span>' : '');
+  renderProgress();
+}
+
+function renderProgress(){
+  const mq = cfg().maxq; const qs = Array.from({length:mq},(_,i)=>i+1);
+  let h = '<tr><th></th>' + AGGS.map(a => '<th colspan="'+mq+'" class="aggh '+(a==='Swiggy'?'s':'z')+'">'+a+'</th>').join('') + '</tr>';
+  h += RESTAURANTS.map(r => '<tr><td>'+r+'</td>' + AGGS.map(a => qs.map(q =>
+    '<td><span class="dot'+(isDone(a,r,q)?' done':'')+(a===S.agg&&r===S.rest&&q===S.qty?' cur':'')+'" data-a="'+a+'" data-r="'+r+'" data-q="'+q+'">'+q+'</span></td>').join('')).join('') + '</tr>').join('');
+  $('progGrid').innerHTML = h;
+  let n = 0; RESTAURANTS.forEach(r => AGGS.forEach(a => qs.forEach(q => { if (isDone(a,r,q)) n++; })));
+  $('progCount').textContent = n+'/'+(RESTAURANTS.length*AGGS.length*mq);
+}
+
+function renderThumbs(){
+  $('thumbs').innerHTML = S.images.map((im,i) => '<div class="thumb"><img src="'+im.url+'" alt="Screenshot '+(i+1)+'"><button data-i="'+i+'" aria-label="Remove">×</button></div>').join('');
+  $('btnRead').disabled = !S.images.length || S.busy;
+}
+
+function buildFields(){
+  let h = '';
+  for (let i=0; i<NUM_FIELDS.length; i+=2){
+    h += '<div class="row2">' + NUM_FIELDS.slice(i,i+2).map(([k,label]) =>
+      '<div class="field" id="w_'+k+'"><label for="f_'+k+'">'+label+'</label><input id="f_'+k+'" inputmode="decimal" autocomplete="off"></div>').join('') + '</div>';
+  }
+  $('fields').innerHTML = h;
+}
+
+function readForm(){
+  const f = {}; NUM_FIELDS.forEach(([k]) => f[k] = num($('f_'+k).value)); f.unit_price = num($('f_unit_price').value); return f;
+}
+
+function refreshChecks(){
+  const list = runChecks(readForm(), {qty:S.qty, agg:S.agg, rest:S.rest, ai:S.ai});
+  const box = $('checks');
+  box.className = 'checks ' + (list.some(c=>c.lvl==='bad') ? 'has-bad' : list.some(c=>c.lvl==='warn') ? 'has-warn' : 'all-ok');
+  box.innerHTML = list.length ? list.map(c => '<div class="ck-'+c.lvl+'">'+(c.lvl==='ok'?'✓ ':c.lvl==='warn'?'! ':'✕ ')+c.msg+'</div>').join('') : '<div class="ck-ok">✓ Looks good.</div>';
+  if (!S.remarksTouched) $('f_remarks').value = autoRemarks();
+  return list;
+}
+
+function autoRemarks(){
+  const parts = ['Qty '+S.qty];
+  const item = $('f_item_name').value.trim(), up = $('f_unit_price').value.trim();
+  if (item) parts.push(item + (up ? ' @ ₹'+up : ''));
+  parts.push(new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}));
+  const ai = S.ai || {};
+  parts.push('Membership: '+(ai.membership || 'None'));
+  const del = num($('f_delivery_fee').value);
+  if (ai.delivery_fee_original && (del===0)) parts.push('Delivery waived (was ₹'+ai.delivery_fee_original+')');
+  if (ai.discount_1_label) parts.push('D1: '+ai.discount_1_label);
+  if (ai.discount_2_label) parts.push('D2: '+ai.discount_2_label);
+  return parts.join(' | ');
+}
+
+function fillForm(ai){
+  S.ai = ai; S.remarksTouched = false;
+  const set = (id, v) => { $(id).value = (v===null||v===undefined) ? '' : v; };
+  const it = (ai && ai.items && ai.items[0]) || {};
+  const aov = ai ? (ai.item_total_before_offers ?? (it.unit_price ? +(it.unit_price*S.qty).toFixed(2) : ai.item_total)) : null;
+  set('f_total_bill', ai && ai.total_bill); set('f_item_total', ai && ai.item_total); set('f_aov', aov);
+  set('f_gst_charges', ai && ai.gst_and_restaurant_charges); set('f_gst_on_item', ai && ai.gst_on_item_total);
+  set('f_packing', ai && ai.packing_charges); set('f_delivery_fee', ai && ai.delivery_fee_charged);
+  set('f_distance', ai && ai.distance_km); set('f_platform_fee', ai && ai.platform_fee);
+  set('f_discount_1', ai && ai.discount_1); set('f_discount_2', ai && ai.discount_2);
+  set('f_coupon_code', ai && ai.coupon_code);
+  set('f_coupon_desc', ai ? (ai.coupon_description || [ai.discount_1_label, ai.discount_2_label].filter(Boolean).join(' + ')) : '');
+  set('f_item_name', it.name); set('f_unit_price', it.unit_price);
+  document.querySelectorAll('#fields .field, #formCard .field').forEach(el => el.classList.remove('unsure'));
+  ((ai && ai.uncertain) || []).forEach(k => { const f = AI_TO_FIELD[k]; const el = f && ($('w_'+f) || ($('f_'+f) && $('f_'+f).closest('.field'))); if (el) el.classList.add('unsure'); });
+  $('readMeta').textContent = ai ? 'AI read '+(ai.restaurant_name || 'the bill')+(ai.aggregator?' on '+ai.aggregator:'')+'. Compare every number with the screenshot before saving.' : 'Type the numbers from the bill.';
+  $('formCard').classList.remove('hidden');
+  refreshChecks();
+  $('formCard').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function resetCapture(){
+  S.images = []; S.ai = null; S.remarksTouched = false;
+  $('fileIn').value = ''; renderThumbs();
+  $('formCard').classList.add('hidden');
+}
+
+function advance(){
+  const mq = cfg().maxq;
+  if (S.qty < mq) { S.qty++; return; }
+  S.qty = 1;
+  if (S.agg === 'Swiggy') { S.agg = 'Zomato'; return; }
+  S.agg = 'Swiggy';
+  const i = RESTAURANTS.indexOf(S.rest);
+  S.rest = RESTAURANTS[(i+1) % RESTAURANTS.length];
+}
+
+function toast(msg, err){
+  const t = $('toast'); t.textContent = msg; t.className = 'toast show'+(err?' err':'');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.className='toast', err?5000:2600);
+}
+function setBusy(btn, on, label){
+  S.busy = on; btn.disabled = on;
+  if (on){ btn._label = btn.innerHTML; btn.innerHTML = '<span class="spinner"></span>'+label; }
+  else if (btn._label) btn.innerHTML = btn._label;
+  $('btnRead').disabled = !S.images.length || on;
+}
+
+async function loadProgress(){
+  try { const j = await api('progress', {date: today()}); S.done = j.rows || []; }
+  catch(e){ toast('Progress: '+e.message, true); }
+  renderSlot();
+}
+
+function renderHeader(){
+  const c = cfg();
+  $('hdrSub').textContent = (c.name || 'Set your name in ⚙') + ' · ' + new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  $('demoBanner').classList.toggle('hidden', !isDemo());
+}
+
+/* ================= EVENTS ================= */
+$('aggSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.agg = b.dataset.agg; renderSlot(); if (S.ai) refreshChecks(); });
+$('restChips').addEventListener('click', e => { const b = e.target.closest('[data-rest]'); if (!b) return; S.rest = b.dataset.rest; renderSlot(); if (S.ai) refreshChecks(); });
+$('qtyChips').addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (!b) return; S.qty = Number(b.dataset.q); renderSlot(); if (!$('formCard').classList.contains('hidden')) refreshChecks(); });
+$('progGrid').addEventListener('click', e => { const d = e.target.closest('.dot'); if (!d) return; S.agg = d.dataset.a; S.rest = d.dataset.r; S.qty = Number(d.dataset.q); renderSlot(); window.scrollTo({top:0,behavior:'smooth'}); });
+
+$('fileIn').addEventListener('change', async e => {
+  const files = Array.from(e.target.files || []);
+  for (const f of files){
+    if (S.images.length >= 4){ toast('Up to 4 screenshots per cart.', true); break; }
+    try { S.images.push(await compress(f)); } catch(err){ toast(err.message, true); }
+  }
+  e.target.value = ''; renderThumbs();
+});
+$('thumbs').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (!b) return; S.images.splice(Number(b.dataset.i),1); renderThumbs(); });
+
+$('btnRead').addEventListener('click', async () => {
+  if (!cfg().name){ toast('Add your name in ⚙ Settings first.', true); openSettings(); return; }
+  setBusy($('btnRead'), true, 'Reading bill…');
+  try {
+    const j = await api('extract', { images: S.images.map(i=>({mime:i.mime, data:i.data})), hint:{aggregator:S.agg, restaurant:S.rest, qty:S.qty} });
+    fillForm(j.data);
+  } catch(e){ toast('Could not read: '+e.message, true); }
+  finally { setBusy($('btnRead'), false); }
+});
+$('btnManual').addEventListener('click', () => fillForm(null));
+$('btnDiscard').addEventListener('click', () => { $('formCard').classList.add('hidden'); S.ai = null; });
+
+$('formCard').addEventListener('input', e => {
+  if (e.target.id === 'f_remarks') { S.remarksTouched = true; return; }
+  refreshChecks();
+});
+
+$('btnSave').addEventListener('click', async () => {
+  const c = cfg();
+  if (!c.name){ toast('Add your name in ⚙ Settings first.', true); openSettings(); return; }
+  const checks = refreshChecks();
+  const bad = checks.filter(x=>x.lvl==='bad');
+  if (checks.some(x => /missing|not a number/.test(x.msg))) { toast('Fill Total Bill and Item Total with numbers.', true); return; }
+  if (bad.length && !confirm('There are '+bad.length+' red check(s):\n\n'+bad.map(b=>'• '+b.msg).join('\n')+'\n\nSave anyway?')) return;
+  if (isDone(S.agg,S.rest,S.qty) && !confirm(S.agg+' · '+S.rest+' · Qty '+S.qty+' is already saved today. Save another row?')) return;
+
+  const f = readForm(); const row = {
+    aggregator:S.agg, restaurant:S.rest, qty:S.qty, auditor:c.name, audit_date: today(),
+    item_name: $('f_item_name').value.trim(), unit_price: f.unit_price,
+    coupon_code: $('f_coupon_code').value.trim(), coupon_desc: $('f_coupon_desc').value.trim(),
+    remarks: $('f_remarks').value.trim(),
+    checks: checks.map(x => x.lvl.toUpperCase()+': '+x.msg).join(' / '),
+  };
+  NUM_FIELDS.forEach(([k]) => row[k] = f[k]);
+  setBusy($('btnSave'), true, 'Saving…');
+  try {
+    const j = await api('save', { row, images: S.images.map(i=>({mime:i.mime, data:i.data})), ai: S.ai });
+    S.done.push({aggregator:S.agg, restaurant:S.rest, qty:S.qty});
+    toast('Saved '+S.agg+' · '+S.rest+' · Qty '+S.qty + (j.templateRow ? ' (row '+j.templateRow+')' : ''));
+    resetCapture(); advance(); renderSlot();
+    window.scrollTo({top:0, behavior:'smooth'});
+  } catch(e){ toast('Not saved: '+e.message, true); }
+  finally { setBusy($('btnSave'), false); }
+});
+
+/* settings */
+function openSettings(){
+  const c = cfg();
+  $('s_name').value = c.name; $('s_pin').value = c.pin; $('s_url').value = store.get('url','') || BACKEND_URL; $('s_maxq').value = String(c.maxq);
+  $('testOut').textContent = ''; $('settingsBg').classList.add('show');
+}
+$('btnSettings').addEventListener('click', openSettings);
+$('settingsBg').addEventListener('click', e => { if (e.target.id==='settingsBg') $('settingsBg').classList.remove('show'); });
+$('btnSaveSettings').addEventListener('click', () => {
+  store.set('name', $('s_name').value.trim()); store.set('pin', $('s_pin').value.trim());
+  store.set('url', $('s_url').value.trim()); store.set('maxq', Number($('s_maxq').value));
+  if (S.qty > cfg().maxq) S.qty = 1;
+  $('settingsBg').classList.remove('show'); renderHeader(); loadProgress();
+});
+$('btnTest').addEventListener('click', async () => {
+  store.set('url', $('s_url').value.trim()); store.set('pin', $('s_pin').value.trim());
+  $('testOut').textContent = 'Testing…';
+  try {
+    const j = await api('ping');
+    if (j.provider === 'demo') { $('testOut').textContent = 'No URL — demo mode.'; return; }
+    const miss = (j.sheet && j.sheet.missingColumns) || [];
+    $('testOut').innerHTML = '<span class="ck-ok">✓ Connected</span> · AI: '+j.provider+' · Tab: '+(j.sheet?j.sheet.tab:'?') +
+      (miss.length ? '<br><span class="ck-warn">Columns not found in sheet: '+miss.join(', ')+'</span>' : '');
+  } catch(e){ $('testOut').innerHTML = '<span class="ck-bad">✕ '+e.message+'</span>'; }
+});
+
+/* init */
+buildFields(); renderHeader(); renderThumbs(); renderSlot(); loadProgress();
+if (!cfg().name) setTimeout(openSettings, 400);
+</script>
+</body>
+</html>
