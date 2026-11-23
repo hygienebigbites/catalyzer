@@ -130,6 +130,8 @@
       Bill card + the GST &amp; charges breakup (up to 4)
       <input type="file" id="fileIn" accept="image/*" multiple>
     </label>
+    <button class="btn secondary" id="btnPaste" style="margin-top:8px">📋 Paste screenshot (Snipping Tool)</button>
+    <p class="small" style="margin:6px 0 0">On a PC: snip with <b>Win + Shift + S</b>, then press <b>Ctrl + V</b> anywhere on this page or tap Paste.</p>
     <div class="thumbs" id="thumbs"></div>
     <div style="height:12px"></div>
     <button class="btn" id="btnRead" disabled>Read bill with AI</button>
@@ -461,14 +463,48 @@ $('restChips').addEventListener('click', e => { const b = e.target.closest('[dat
 $('qtyChips').addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (!b) return; S.qty = Number(b.dataset.q); renderSlot(); if (!$('formCard').classList.contains('hidden')) refreshChecks(); });
 $('progGrid').addEventListener('click', e => { const d = e.target.closest('.dot'); if (!d) return; S.agg = d.dataset.a; S.rest = d.dataset.r; S.qty = Number(d.dataset.q); renderSlot(); window.scrollTo({top:0,behavior:'smooth'}); });
 
-$('fileIn').addEventListener('change', async e => {
-  const files = Array.from(e.target.files || []);
+async function addFiles(files){
+  files = files.filter(f => f && /^image\//.test(f.type));
+  if (!files.length) { toast('No image found — snip again with Win + Shift + S.', true); return; }
+  let added = 0;
   for (const f of files){
     if (S.images.length >= 4){ toast('Up to 4 screenshots per cart.', true); break; }
-    try { S.images.push(await compress(f)); } catch(err){ toast(err.message, true); }
+    try { S.images.push(await compress(f)); added++; } catch(err){ toast(err.message, true); }
   }
-  e.target.value = ''; renderThumbs();
+  renderThumbs();
+  if (added) toast(added+' screenshot'+(added>1?'s':'')+' added');
+}
+$('fileIn').addEventListener('change', async e => {
+  await addFiles(Array.from(e.target.files || []));
+  e.target.value = '';
 });
+// Ctrl+V anywhere (Snipping Tool copies the snip to the clipboard)
+document.addEventListener('paste', e => {
+  if (e.target.closest && e.target.closest('input, textarea')) {
+    const hasImg = Array.from((e.clipboardData && e.clipboardData.items) || []).some(i => i.type.startsWith('image/'));
+    if (!hasImg) return; // normal text paste into a field
+  }
+  const files = Array.from((e.clipboardData && e.clipboardData.items) || [])
+    .filter(i => i.kind === 'file' && i.type.startsWith('image/')).map(i => i.getAsFile());
+  if (files.length) { e.preventDefault(); addFiles(files); }
+});
+// Paste button (asks the browser for clipboard permission once)
+$('btnPaste').addEventListener('click', async () => {
+  if (!navigator.clipboard || !navigator.clipboard.read) { toast('Press Ctrl + V on this page to paste.', true); return; }
+  try {
+    const items = await navigator.clipboard.read(); const files = [];
+    for (const it of items) {
+      const t = it.types.find(x => x.startsWith('image/'));
+      if (t) { const b = await it.getType(t); files.push(new File([b], 'snip.png', {type: t})); }
+    }
+    addFiles(files);
+  } catch (_) { toast('Browser blocked the clipboard — press Ctrl + V on this page instead.', true); }
+});
+// Drag & drop
+['dragover','drop'].forEach(ev => $('dropZone').addEventListener(ev, e => {
+  e.preventDefault();
+  if (ev === 'drop') addFiles(Array.from(e.dataTransfer.files || []));
+}));
 $('thumbs').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (!b) return; S.images.splice(Number(b.dataset.i),1); renderThumbs(); });
 
 $('btnRead').addEventListener('click', async () => {
